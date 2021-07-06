@@ -16,7 +16,7 @@ uq4k
 
 
 
-this is the repo for the uq of 4th kind paper. 
+this is the repo for the uq of 4th kind paper.
 
 
 * Free software: MIT license
@@ -27,6 +27,11 @@ Features
 --------
 
 * TODO
+
+Developers
+----------
+First install the requirements_dev.txt in your virtualenv and do `pre-commit install`
+
 
 Credits
 -------
