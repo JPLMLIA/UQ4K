@@ -30,4 +30,4 @@ Features
 
 Developers
 ----------
-First install the `requirements.txt` in your virtualenv and do `pre-commit install`
+First install the ``requirements.txt`` in your virtualenv and do ``pre-commit install``
