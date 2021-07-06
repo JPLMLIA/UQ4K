@@ -30,13 +30,4 @@ Features
 
 Developers
 ----------
-First install the requirements_dev.txt in your virtualenv and do `pre-commit install`
-
-
-Credits
--------
-
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+First install the `requirements.txt` in your virtualenv and do `pre-commit install`
