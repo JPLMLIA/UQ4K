@@ -9,7 +9,7 @@ repos:
       - id: flake8
         args:
         - --max-line-length=110
-        - --ignore=E402,F841,F401,E302,E305,W503
+        - --ignore=E402,F841,F401,E302,E305,W503,E203
   - repo: local
     hooks:
       - id: isort
