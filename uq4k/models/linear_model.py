@@ -1,6 +1,6 @@
 import pathlib
 import sys
-from collections import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 
@@ -113,3 +113,8 @@ if __name__ == "__main__":
     X = np.array([1, 2, 3]).reshape(-1, 1)
     print(model(X))
     print(model.theta)
+    print(model.weight)
+    model.theta = [2, 2]
+
+    print(model.theta)
+    print(model.weight)
