@@ -1,0 +1,4 @@
+Not a full readme file but the qoi_miniball.py file contains the code needed to run the blackbox optimization with the minimum enclosing ball algorithm
+on the California housing data set with a standard linear regression model. The quantity of interest used is one dimensional in the form of the predicted
+value of one of the houses that wasn't in the set used to train the model. Ideally, the functions should be able to be used or only very slightly tweaked
+for compatability with other models and other quantities of interest.
