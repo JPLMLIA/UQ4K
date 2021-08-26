@@ -40,14 +40,15 @@ class PredPrey(BaseModel):
 
     Parameters:
     -----------
-        alpha        (float) : model parameter
-        alpha_bounds (tup)   : bounds for alpha parameter
-        gamma        (float) : model parameter
-        gamma_bounds (tup)   : bounds for alpha parameter
-        beta         (float) : model parameter
-        delta        (float) : model parameter
-        prey_init    (float) : model parameter
-        pred_init    (float) : model parameter
+        alpha        (float)  : model parameter
+        alpha_bounds (tup)    : bounds for alpha parameter
+        gamma        (float)  : model parameter
+        gamma_bounds (tup)    : bounds for alpha parameter
+        beta         (float)  : model parameter
+        delta        (float)  : model parameter
+        prey_init    (float)  : model parameter
+        pred_init    (float)  : model parameter
+        time_idx     (np arr) : time indices
 
     """
     def __init__(
@@ -59,7 +60,8 @@ class PredPrey(BaseModel):
         beta,
         delta,
         prey_init,
-        pred_init
+        pred_init,
+        time_idx
     ):
 
         # model parameter attributes -- only accepts parameters optimizing for
@@ -72,6 +74,8 @@ class PredPrey(BaseModel):
         self.delta = delta
         self.prey_init = prey_init
         self.pred_init = pred_init
+
+        self.time_idx = time_idx
 
         # set solver
         self.ode_solver = LotkaVolterraModel()
@@ -109,3 +113,30 @@ class PredPrey(BaseModel):
                 "numeric",
                 self.gamma_bounds
             )
+
+    def __call__(self, params):
+        """
+        Evaluate the model at the parameter
+
+        Implicitly uses time points.
+
+        Parameters:
+        -----------
+            params (np arr) : (alpha, gamma) vector
+
+        Returns:
+        --------
+            output of the model with given parameters
+        """
+        alpha_prop, gamma_prop = params
+        return self.ode_solver.simulate(
+            parameters=[
+                alpha_prop,
+                gamma_prop,
+                self.gamma,
+                self.delta,
+                self.prey_init,
+                self.pred_init
+            ],
+            times=self.time_idx
+        )
