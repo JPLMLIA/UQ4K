@@ -13,15 +13,13 @@ from scipy import stats
 
 class BbOpt:
 
-    def __init__(self, objective_obj, forward_model):
+    def __init__(self, objective_obj):
         """
         Parameters:
         -----------
             objective_obj (Objective) : contains objective function for opt
-            forward_model (BaseModel) : forward operator -> objective func
         """
         self.objective_obj = objective_obj
-        self.forward_model = forward_model
 
     def find_mle(self, data, starting_theta, max_iters=10):
         """ Find maximum likelihood estimator """
@@ -32,8 +30,7 @@ class BbOpt:
 
             opt_mle = minimize(
                 fun=lambda theta: self.objective_obj.sum_sq_norms(
-                    data=data,
-                    param=theta
+                    params=theta
                 ),
                 x0=starting_theta
             )
@@ -74,12 +71,12 @@ class BbOpt:
         self,
         sigma_2,
         data,
-        epsilon_0=0.0001,
-        conf_lev=0.95,
+        theta_init,
+        epsilon_0,
+        conf_lev,
+        bounds,
+        max_iter,
         man_delta=None,
-        mu=1e3,
-        bounds=[[-10, 10]]*2,
-        max_iter=10
     ):
         """
         Primary data objects:
@@ -90,18 +87,18 @@ class BbOpt:
         TODO: Add the QoI capability. Currently only works with identity map.
 
         Parameters:
-            sigma_2   (float)  : data variance
-            data      (np arr) : (n,) data array
-            epsilon_0 (float)  : stopping criterion
-            conf_lev  (float)  : confidence level used in chi-sq calc of delta
-            man_delta (float)  : man. set delta (default None uses chi-sq calc)
-            mu        (float)  : penalty coefficient for merit function
-            bounds    (list)   : list bounds for use in the diff evolution algo
-            max_iter  (int)    : max # of iterations of finding boundary points
+            sigma_2    (float)  : data variance
+            data       (np arr) : (n,) data array
+            theta_init (np arr) : starting point for MLE optimization
+            epsilon_0  (float)  : stopping criterion
+            conf_lev   (float)  : confidence level used in chi-sq calc of delta
+            bounds     (list)   : list bounds for use in the diff evolution algo
+            max_iter   (int)    : max # of iterations of finding boundary points
+            man_delta  (float)  : man. set delta (default None uses chi-sq calc)
 
         Returns:
             mle_theta (np arr) : MLE of parameters given data
-            M_delta   (float)  : level-set constraint
+            M_alpha   (float)  : level-set constraint
             S         (list)   : collection of points for find min enclosing
                                  ball
             center    (np arr) : converged center
@@ -111,10 +108,13 @@ class BbOpt:
         d = len(bounds)
 
         # find the MLE
-        mle_theta, mle_error = self.find_mle(data=data)
+        mle_theta, mle_error = self.find_mle(
+            data=data,
+            starting_theta=theta_init
+        )
 
-        # compute M_delta
-        M_delta = self.compute_M_alpha(
+        # compute M_alpha
+        M_alpha = self.compute_M_alpha(
             sigma_2=sigma_2,
             mle_error=mle_error,
             df=len(mle_theta),
@@ -128,6 +128,7 @@ class BbOpt:
         radius_0 = 0
         e = 2 * epsilon_0
         i = 0
+
 
         while (e >= epsilon_0) & (i < max_iter):
 
@@ -161,7 +162,7 @@ class BbOpt:
 
             i += 1
 
-        return mle_theta, M_delta, np.array(S), center, radius_0
+        return mle_theta, M_alpha, np.array(S), center, radius_0
 
     def weight_optimization(self, S):
         """

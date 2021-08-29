@@ -3,7 +3,7 @@
 # See 'https://en.wikipedia.org/wiki/Lotka–Volterra_equations' for the
 # definitions of the coeffecients.
 
-from base_model import BaseModel, Modelparameter
+from uq4k.models.base_model import BaseModel, Modelparameter
 from collections import Iterable
 from scipy.integrate import odeint
 
@@ -132,8 +132,8 @@ class PredPrey(BaseModel):
         return self.ode_solver.simulate(
             parameters=[
                 alpha_prop,
+                self.beta,
                 gamma_prop,
-                self.gamma,
                 self.delta,
                 self.prey_init,
                 self.pred_init
