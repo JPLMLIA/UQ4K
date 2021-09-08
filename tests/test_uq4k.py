@@ -4,10 +4,10 @@
 
 
 import unittest
+
 from click.testing import CliRunner
 
-from uq4k import uq4k
-from uq4k import cli
+from uq4k import cli, uq4k
 
 
 class TestUq4k(unittest.TestCase):

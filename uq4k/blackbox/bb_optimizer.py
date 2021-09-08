@@ -7,12 +7,11 @@
 import cvxpy as cp
 import miniball as mb
 import numpy as np
-from scipy.optimize import differential_evolution, minimize
 from scipy import stats
+from scipy.optimize import differential_evolution, minimize
 
 
 class BbOpt:
-
     def __init__(self, objective_obj):
         """
         Parameters:
@@ -22,17 +21,14 @@ class BbOpt:
         self.objective_obj = objective_obj
 
     def find_mle(self, data, starting_theta, max_iters=10):
-        """ Find maximum likelihood estimator """
+        """Find maximum likelihood estimator"""
         coverged = False
         i = 0
 
         while (not coverged) & (i < max_iters):
 
             opt_mle = minimize(
-                fun=lambda theta: self.objective_obj.sum_sq_norms(
-                    params=theta
-                ),
-                x0=starting_theta
+                fun=lambda theta: self.objective_obj.sum_sq_norms(params=theta), x0=starting_theta
             )
 
             if opt_mle['success']:
@@ -42,14 +38,7 @@ class BbOpt:
 
         return opt_mle['x'], opt_mle['fun']
 
-    def compute_M_alpha(
-        self,
-        sigma_2,
-        mle_error,
-        df,
-        conf_level=0.95,
-        man_delta=None
-    ):
+    def compute_M_alpha(self, sigma_2, mle_error, df, conf_level=0.95, man_delta=None):
         """
         Finds the slack to define the ellipsoid from the likelihood ratio.
         Supports chi-sq method and manual delta set
@@ -108,18 +97,11 @@ class BbOpt:
         d = len(bounds)
 
         # find the MLE
-        mle_theta, mle_error = self.find_mle(
-            data=data,
-            starting_theta=theta_init
-        )
+        mle_theta, mle_error = self.find_mle(data=data, starting_theta=theta_init)
 
         # compute M_alpha
         M_alpha = self.compute_M_alpha(
-            sigma_2=sigma_2,
-            mle_error=mle_error,
-            df=len(mle_theta),
-            man_delta=man_delta,
-            conf_level=conf_lev
+            sigma_2=sigma_2, mle_error=mle_error, df=len(mle_theta), man_delta=man_delta, conf_level=conf_lev
         )
 
         # set variables for starting loop
@@ -129,15 +111,10 @@ class BbOpt:
         e = 2 * epsilon_0
         i = 0
 
-
         while (e >= epsilon_0) & (i < max_iter):
 
             # find boundary point
-            de_result = differential_evolution(
-                func=self.objective_obj,
-                args=(center),
-                bounds=bounds
-            )
+            de_result = differential_evolution(func=self.objective_obj, args=(center), bounds=bounds)
             assert de_result['success']
 
             # check if new point has larger radius
@@ -187,13 +164,8 @@ class BbOpt:
         p_vec = cp.Variable(n)
 
         problem = cp.Problem(
-            objective=cp.Minimize(
-                cp.quad_form(p_vec, Q_mat) - v.T @ p_vec
-            ),
-            constraints=[
-                p_vec >= np.zeros(n),
-                cp.sum(p_vec) == 1
-            ]
+            objective=cp.Minimize(cp.quad_form(p_vec, Q_mat) - v.T @ p_vec),
+            constraints=[p_vec >= np.zeros(n), cp.sum(p_vec) == 1],
         )
 
         # solve and check convergence

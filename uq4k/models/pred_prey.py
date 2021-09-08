@@ -3,9 +3,11 @@
 # See 'https://en.wikipedia.org/wiki/Lotka–Volterra_equations' for the
 # definitions of the coeffecients.
 
-from uq4k.models.base_model import BaseModel, Modelparameter
 from collections import Iterable
+
 from scipy.integrate import odeint
+
+from uq4k.models.base_model import BaseModel, Modelparameter
 
 
 class LotkaVolterraModel(object):
@@ -26,8 +28,8 @@ class LotkaVolterraModel(object):
 
         def rhs(y, t, p):
             X, Y = y
-            dX_dt = alpha*X - beta*X*Y
-            dY_dt = -gamma*Y + delta*X*Y
+            dX_dt = alpha * X - beta * X * Y
+            dY_dt = -gamma * Y + delta * X * Y
             return dX_dt, dY_dt
 
         values = odeint(rhs, [Xt0, Yt0], times, (parameters,))
@@ -51,6 +53,7 @@ class PredPrey(BaseModel):
         time_idx     (np arr) : time indices
 
     """
+
     def __init__(
         self,
         alpha,
@@ -61,7 +64,7 @@ class PredPrey(BaseModel):
         delta,
         prey_init,
         pred_init,
-        time_idx
+        time_idx,
     ):
 
         # model parameter attributes -- only accepts parameters optimizing for
@@ -84,35 +87,17 @@ class PredPrey(BaseModel):
     def modelparameter_alpha(self):
         """"""
         if isinstance(self.alpha, Iterable):
-            return Modelparameter(
-                "alpha",
-                "numeric",
-                self.alpha_bounds,
-                len(self.alpha)
-            )
+            return Modelparameter("alpha", "numeric", self.alpha_bounds, len(self.alpha))
         else:
-            return Modelparameter(
-                "alpha",
-                "numeric",
-                self.alpha_bounds
-            )
+            return Modelparameter("alpha", "numeric", self.alpha_bounds)
 
     @property
     def modelparameter_gamma(self):
         """"""
         if isinstance(self.gamma, Iterable):
-            return Modelparameter(
-                "gamma",
-                "numeric",
-                self.gamma_bounds,
-                len(self.gamma)
-            )
+            return Modelparameter("gamma", "numeric", self.gamma_bounds, len(self.gamma))
         else:
-            return Modelparameter(
-                "gamma",
-                "numeric",
-                self.gamma_bounds
-            )
+            return Modelparameter("gamma", "numeric", self.gamma_bounds)
 
     def __call__(self, params):
         """
@@ -136,7 +121,7 @@ class PredPrey(BaseModel):
                 gamma_prop,
                 self.delta,
                 self.prey_init,
-                self.pred_init
+                self.pred_init,
             ],
-            times=self.time_idx
+            times=self.time_idx,
         )
