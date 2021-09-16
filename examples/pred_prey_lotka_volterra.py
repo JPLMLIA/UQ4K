@@ -3,16 +3,21 @@
 # Author   : Mike Stanley
 # Written  : August 29, 2021
 # Last Mod : August 29, 2021
+import os
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
-from uq4k.blackbox.bb_optimizer import BbOpt
-from uq4k.models.pred_prey import PredPrey
-from uq4k.objective_function import MeritFunc
+sys.path.insert(0, os.getcwd())
 
-plt.style.use('seaborn-white')
+# uq4k modules
+from uq4k.blackbox.bb_optimizer import BbOpt
+from uq4k.models.loss import MeritFunc
+from uq4k.models.predprey_model import PredPrey
+
+plt.style.use("seaborn-white")
 
 
 def plot_dyn_and_data(evals_times, pop_dyn, data):
@@ -32,18 +37,30 @@ def plot_dyn_and_data(evals_times, pop_dyn, data):
     plt.figure(figsize=(9.5, 4.5))
 
     # plot the noisy observations
-    plt.plot(evals_times, data[:, 0], color='red', label=r'Prey Component: $x_t$')
-    plt.plot(evals_times, data[:, 1], color='blue', label=r'Predator Component: $y_t$')
+    plt.plot(evals_times, data[:, 0], color="red", label=r"Prey Component: $x_t$")
+    plt.plot(evals_times, data[:, 1], color="blue", label=r"Predator Component: $y_t$")
 
     # plot the true Dynamics
-    plt.plot(evals_times, pop_dyn[:, 0], color='red', label='True Prey Population', linestyle='--', alpha=0.5)
     plt.plot(
-        evals_times, pop_dyn[:, 1], color='blue', label='True Predator Population', linestyle='--', alpha=0.5
+        evals_times,
+        pop_dyn[:, 0],
+        color="red",
+        label="True Prey Population",
+        linestyle="--",
+        alpha=0.5,
+    )
+    plt.plot(
+        evals_times,
+        pop_dyn[:, 1],
+        color="blue",
+        label="True Predator Population",
+        linestyle="--",
+        alpha=0.5,
     )
 
     # axis labels
-    plt.ylabel('Population Counts')
-    plt.xlabel('$t$ (time)')
+    plt.ylabel("Population Counts")
+    plt.xlabel("$t$ (time)")
     plt.ylim(0, 80)
 
     # change x labels to be integers
@@ -127,12 +144,12 @@ if __name__ == "__main__":
         max_iter=MAX_IT,
     )
 
-    print('----- Center and Radius -----')
+    print("----- Center and Radius -----")
     print(S)
     print(center)
     print(radius_0)
 
     # perform optimization to find dirac weights
     p_opt = optimizer.weight_optimization(S=S)
-    print('----- Dirac Weights -----')
+    print("----- Dirac Weights -----")
     print(p_opt)
