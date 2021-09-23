@@ -1,15 +1,37 @@
-# Implements loss / objective function class for UQ4K. Provides a general objective
+# Implements objective function class for UQ4K. Provides a general objective
 # function framework, which can take an arbitrary forward model.
 #
 # Author   : Mike Stanley
 # Written  : August 26, 2021
 # Last Mod : August 26, 2021
 
+from abc import ABC, abstractmethod
+
 import numpy as np
 
 
-class Loss:
-    def __init__(self, forward_model, mu, M_alpha, data):
+class AbstractLoss(ABC):  # TODO: should these abstract methods be defined here?
+    def __init__(self):
+        super().__init__()
+
+    @abstractmethod
+    def sum_sq_norms(self):
+        """
+        Finds the squared 2-norm of the difference between model and data
+        """
+        pass
+
+    @abstractmethod
+    def center_dist(self):
+        """
+        Finds the squared 2-norm between a new proposed parameter value and
+        the current center
+        """
+        pass
+
+
+class MeritFunc(AbstractLoss):
+    def __init__(self, forward_model, mu, data):
         """
         Dimension key:
             n : number of data points
@@ -19,12 +41,10 @@ class Loss:
         -----------
             forward_model (BaseModel) : see base_model.py
             mu            (float)     : merit function parameter
-            M_alpha       (float)     : rarity bound for the log like. ratio
             data          (np arr)    : array of observed data - n x d
         """
         self.forward_model = forward_model
         self.mu = mu
-        self.M_alpha = M_alpha
         self.data = data
 
     def sum_sq_norms(self, params):
@@ -66,7 +86,7 @@ class Loss:
         """
         return np.linalg.norm(new_point - center) ** 2
 
-    def __call__(self, new_point, center):
+    def __call__(self, new_point, center, M_alpha):
         """
         Evaluates the objective function at some new point.
 
@@ -77,6 +97,7 @@ class Loss:
         -----------
             new_point (np arr) : p
             center    (np arr) : p
+            M_alpha   (float)  : bound on the error
 
         Returns:
         --------
@@ -86,7 +107,7 @@ class Loss:
         center_dist_term = self.center_dist(new_point=new_point, center=center)
 
         # compute the penalty term
-        error = self.sum_sq_norms(data=self.data, param=new_point)
-        merit_term = self.mu * np.max(np.array([0, error - self.M_alpha]))
+        error = self.sum_sq_norms(params=new_point)
+        merit_term = self.mu * np.max(np.array([0, error - M_alpha]))
 
         return -center_dist_term + merit_term
