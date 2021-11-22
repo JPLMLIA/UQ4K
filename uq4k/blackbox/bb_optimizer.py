@@ -2,7 +2,7 @@
 #
 # Author   : Mike Stanley
 # Written  : August 28, 2021
-# Last Mod : August 28, 2021
+# Last Mod : November 20, 2021
 
 import cvxpy as cp
 import miniball as mb
@@ -21,7 +21,13 @@ class BbOpt:
         self.objective_obj = objective_obj
 
     def find_mle(self, data, starting_theta, max_iters=10):
-        """Find maximum likelihood estimator"""
+        """
+        Find maximum likelihood estimator
+
+        Parameters:
+        -----------
+            data (np arr)
+        """
         coverged = False
         i = 0
 
@@ -78,8 +84,6 @@ class BbOpt:
         - epsilon_0 : stopping criterion
         - beta      : significance level
 
-        TODO: Add the QoI capability. Currently only works with identity map.
-
         Parameters:
             sigma_2    (float)  : data variance
             data       (np arr) : (n,) data array
@@ -117,7 +121,7 @@ class BbOpt:
         )
 
         # set variables for starting loop
-        center = mle_theta.copy()
+        center = self.objective_obj.qoi_func(mle_theta).copy()
         S.append(center)
         radius_0 = 0
         e = 2 * epsilon_0
@@ -128,18 +132,24 @@ class BbOpt:
             # find boundary point
             de_result = differential_evolution(
                 func=self.objective_obj,
-                args=(center),
+                args=(center, M_alpha),
                 bounds=bounds
             )
             assert de_result['success']
 
             # check if new point has larger radius
             if np.linalg.norm(de_result['x'] - center) >= radius_0:
-                S.append(de_result['x'])
+                S.append(
+                    self.objective_obj.qoi_func(de_result['x'])
+                )
 
             # find the minimum enclosing ball for S
-            C, r2 = mb.get_bounding_ball(np.array(S))
-            center = C
+            if len(np.array(S).shape) == 1:  # i.e., a 1d QoI
+                C, r2 = mb.get_bounding_ball(np.array(S)[:, np.newaxis])
+                center = C[0]
+            else:
+                C, r2 = mb.get_bounding_ball(np.array(S))
+                center = C
 
             # update radius change
             e = np.abs(np.sqrt(r2) - radius_0)
@@ -168,13 +178,24 @@ class BbOpt:
             optimized weights over diracs (n,) numpy array
         """
         # find the optimization objects
-        n, m = S.shape
+        ONE_D = len(S.shape) == 1
+        if ONE_D:
+            n = S.shape[0]
+
+        else:
+            n, m = S.shape
+
         Q_mat = np.zeros(shape=(n, n))
 
-        for t in range(m):
-            Q_mat += np.outer(S[:, t], S[:, t])
+        if ONE_D:
+            Q_mat = np.outer(S, S)
+            v = np.square(S)
 
-        v = np.square(S).sum(axis=1)
+        else:
+            for t in range(m):
+                Q_mat += np.outer(S[:, t], S[:, t])
+
+            v = np.square(S).sum(axis=1)
 
         # perform the optimization
         p_vec = cp.Variable(n)
