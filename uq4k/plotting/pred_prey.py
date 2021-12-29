@@ -7,6 +7,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def plot_dyn_and_data(evals_times, pop_dyn, data):
     """
     Plot the true population dynamics and noisy observations.
