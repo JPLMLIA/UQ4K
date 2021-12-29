@@ -17,3 +17,9 @@ repos:
         language: system
         types: [file, python]
         entry: isort
+      - id: black
+        name: "Black"
+        language: system
+        types: [file, python]
+        entry: black
+        args: [--safe, "--line-length=110", "--skip-string-normalization"]
