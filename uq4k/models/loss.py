@@ -7,6 +7,7 @@
 
 from abc import ABC, abstractmethod
 
+import jax.numpy as jnp
 import numpy as np
 
 
@@ -114,6 +115,65 @@ class MeritFunc(AbstractLoss):
         merit_term = self.mu * np.max(np.array([0, error - M_alpha]))
 
         return -center_dist_term + merit_term
+
+
+class DifferentaibleMeritFunc(AbstractLoss):
+    def __init__(self, forward_model, mu, data, qoi_func):
+        """
+        Dimension key:
+            n : number of data points
+            d : dimension of each data point
+            m : dimension of the qoi
+
+        Parameters:
+        -----------
+            forward_model (BaseModel) : see base_model.py
+            mu            (float)     : merit function parameter
+            data          (np arr)    : array of observed data - n x d
+            qoi_func      (function)  : maps theta |-> qoi, R^n -> R^m
+        """
+        self.forward_model = forward_model
+        self.mu = mu
+        self.data = data
+        self.qoi_func = qoi_func
+
+    def sum_sq_norms(self, params):
+        """
+        Finds the squared 2-norm of the difference between model and data
+
+        Dimension key:
+            p : dimension of model parameters
+
+        Parameters:
+        -----------
+            params (jax DeviceArray) : p
+
+        Returns:
+        --------
+            2-norm of residuals
+        """
+        diffs_squared = jnp.square(self.data - self.forward_model(params))
+        return jnp.sum(diffs_squared)
+
+    def center_dist(self, new_point, center):
+        """
+        Finds the squared 2-norm between a new proposed parameter value and
+        the current center
+
+        Dimension key:
+            p : dimension of model parameters
+
+        Parameters:
+        -----------
+            new_point (jax DeviceArray) : p
+            center    (jax DeviceArray) : m
+
+        Returns:
+        --------
+            squared 2-norm of distance between two points
+        """
+        diffs_squared = jnp.square(self.qoi_func(new_point) - center)
+        return jnp.sum(diffs_squared)
 
 
 class MeritFunc_NEW(AbstractLoss):
