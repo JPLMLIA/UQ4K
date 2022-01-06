@@ -175,6 +175,31 @@ class DifferentaibleMeritFunc(AbstractLoss):
         diffs_squared = jnp.square(self.qoi_func(new_point) - center)
         return jnp.sum(diffs_squared)
 
+    def __call__(self, new_point, center, M_Alpha):
+        """
+        Evaluates the objective function at some new point.
+
+        Dimension key:
+            p : dimension of model parameters
+            m : dimension of the QoI
+
+        Parameters:
+        -----------
+            new_point (jax.numpy.DeviceArray) : p
+            center    (np arr) : m
+            M_alpha   (float)  : bound on the error
+
+        Returns:
+        --------
+            Objective function
+        """
+
+        center_dist_term = self.center_dist(new_point, center)
+        error = self.sum_sq_norms(params=new_point)
+        constraint = self.mu * jnp.max([error - M_Alpha, 0])
+
+        return -center_dist_term + constraint
+
 
 class MeritFunc_NEW(AbstractLoss):
     def __init__(self, forward_model, mu, data_y, data_x):
