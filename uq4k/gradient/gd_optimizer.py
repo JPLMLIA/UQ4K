@@ -4,6 +4,7 @@
 # Written  : December 29, 2021
 # Last Mod : December 29, 2021
 
+import random
 from functools import partial
 from typing import List, Tuple, Union
 
@@ -20,6 +21,37 @@ from uq4k.models.loss import DifferentaibleMeritFunc
 
 
 class GdOpt:
+    @staticmethod
+    def __multisample_startegy(
+        dims: int, num_samples: int = 10, bounds: Tuple[int, int] = (-1, 1), seed: int = 0
+    ) -> jax.numpy.DeviceArray:
+        """generates multiple random initializations of the theta parameter
+
+        Parameters
+        ----------
+        dims: int
+            the dimesnions of the theta parameters
+        num_samples : int, optional
+            the number of samples to draw, by default 10
+        bounds: Tuple[int, int], optional
+            the lower and upper bound to sample uniformly from
+        seed: int, optional
+            the seed to the random number generator, by default 0
+
+        Returns
+        -------
+        jax.numpy.DeviceArray
+            the sample of random initializations (num_samples, parameters_count)
+        """
+        rng = jax.random.PRNGKey(seed)
+        lower_bound, upper_bound = bounds
+
+        candidates = jax.random.uniform(
+            rng, shape=(num_samples, dims), minval=lower_bound, maxval=upper_bound
+        )
+
+        return candidates
+
     def __init__(self, objective: DifferentaibleMeritFunc) -> None:
         """initializes the gradient descent optimizer with a differentiable merit function
 
@@ -29,6 +61,7 @@ class GdOpt:
             the merit function to optimize
         """
         self.objective = objective
+        self.init_strategies = {"multisample": GdOpt.__multisample_startegy}
 
     def compute_M_alpha(
         self,
@@ -69,7 +102,7 @@ class GdOpt:
 
     def find_mle(
         self,
-        initial_theta: jax.numpy.DeviceArray,
+        theta_dims: int,
         max_epoch: int = 1000,
         lr: float = 0.01,
         min_improvement: float = 0.01,
@@ -79,8 +112,8 @@ class GdOpt:
 
         Parameters
         ----------
-        initial_theta : jax.numpy.DeviceArray
-            the initial value of theta to start GD from
+        theta_dims : int
+            diminsionality of the theta paramter
         max_epoch : int, optional
             the number of epochs to run GD for, by default 1000
         lr : float, optional
@@ -101,15 +134,18 @@ class GdOpt:
         early_stopper = EarlyStopper(
             min_improvement=min_improvement, patience=patience, improvement_type="relative"
         )
+        rng = jax.random.PRNGKey(seed=42)
+        init_theta = jax.random.uniform(rng, shape=(theta_dims,), minval=-1, maxval=1)
         optimizer = optax.adam(learning_rate=lr)
-        state = optimizer.init(initial_theta)
-        theta = initial_theta
+        state = optimizer.init(init_theta)
+        theta = init_theta
         error = None
 
         @jax.jit
         def update_step(theta, state):
             error, grad = jax.value_and_grad(self.objective.sum_sq_norms)(theta)
-            updates, new_state = optimizer.update(grad, state)
+            normed_grad = grad / jnp.linalg.norm(grad)
+            updates, new_state = optimizer.update(normed_grad, state)
             new_theta = optax.apply_updates(theta, updates)
             return error, new_theta, new_state
 
@@ -166,11 +202,13 @@ class GdOpt:
         bound_objective = partial(self.objective, center=center, M_alpha=M_alpha)
 
         furthest_point = None
+        furthest_distance = 0
 
         @jax.jit
         def update_step(theta, state):
             loss, grad = jax.value_and_grad(bound_objective)(theta)
-            updates, new_state = optimizer.update(grad, state)
+            normed_grad = grad / jnp.linalg.norm(grad)
+            updates, new_state = optimizer.update(normed_grad, state)
             new_theta = optax.apply_updates(theta, updates)
             return loss, new_theta, new_state
 
@@ -180,21 +218,24 @@ class GdOpt:
             if stop:
                 break
             if improvement:
+                furthest_distance = jax.lax.stop_gradient(self.objective.center_dist(theta, center))
                 furthest_point = jax.lax.stop_gradient(self.objective.qoi_func(theta))
 
-        return furthest_point
+        return furthest_point, furthest_distance
 
     def optimize_min_e_ball(
         self,
         sigma_2: np.ndarray,
         data: np.ndarray,
-        initial_theta: jax.numpy.DeviceArray,
+        initial_theta: Union[jax.numpy.DeviceArray, str],
+        theta_dims: int,
         raduis_eps: float,
         conf_level: float,
         max_epoch: int = 100000,
         lr: float = 0.001,
         man_delta: Union[None, float] = None,
         bounds=None,
+        seed: int = 0,
     ) -> Tuple[np.ndarray, float, List[np.ndarray], np.ndarray, float]:
         """runs the UQ4K optimization problem to find the minimum enclosing ball
 
@@ -204,8 +245,13 @@ class GdOpt:
             data varainace
         data : np.ndarray
             the data array
-        initial_theta : jax.numpy.DeviceArray
-            the initial starting point for the GD optimization
+        initial_theta : Union[jax.numpy.DeviceArray, str]
+            array: the initial starting point for the GD optimization
+            str: the initialization startegy used internally
+                - 'multisample': sample multiple random initializations
+                   and continue with the one yielding the furthest distance
+        theta_dims: int
+            the dimensionality of the theta parameters
         raduis_eps : float
             the stopping criterion for the min enclosing ball optimization
         conf_level : float
@@ -218,6 +264,8 @@ class GdOpt:
             manual value of delta bypassing the chi-squared method of M_alpha, by default None
         bounds : [type], optional
             the bounds for the theta vector (currently not used in GD), by default None
+        seed: int, optional
+            random seed for theta initialization
 
         Returns
         -------
@@ -228,13 +276,22 @@ class GdOpt:
             - center: the center of the minimum enclosing ball
             - raduis: the raduis of the minimum enclosing ball
         """
-        dims = initial_theta.size
+        dims = theta_dims
+
+        initial_theta_val = None
+        init_strategy = None
+        if isinstance(initial_theta, str):
+            init_strategy = self.init_strategies.get(initial_theta, None)
+            if init_strategy is None:
+                raise KeyError(f"No initialization strategy called {initial_theta}")
+        else:
+            initial_theta_val = jnp.reshape(initial_theta, (1, -1))
 
         S = []
         center = None
         raduis = 0
 
-        mle_theta, mle_error = self.find_mle(initial_theta, max_epoch, lr)
+        mle_theta, mle_error = self.find_mle(theta_dims, max_epoch, lr)
 
         M_alpha = self.compute_M_alpha(
             sigma_2, mle_error, df=dims, conf_level=conf_level, man_delta=man_delta
@@ -246,11 +303,29 @@ class GdOpt:
         raduis_diff = np.inf
 
         while raduis_diff > raduis_eps:
-            furthest_point = self.__get_furthest_point(initial_theta, M_alpha, center, max_epoch, lr)
+            seed += 2
+
+            init_theta_candidates = (
+                init_strategy(dims=theta_dims, seed=seed) if init_strategy else initial_theta_val
+            )
+
+            furthest_point = None
+            furthest_distance = 0
+            for init_theta in init_theta_candidates:
+                furthest_point_candidate, furthest_distance_candidate = self.__get_furthest_point(
+                    init_theta, M_alpha, center, max_epoch, lr
+                )
+                if furthest_distance_candidate >= furthest_distance:
+                    furthest_distance = furthest_distance_candidate
+                    furthest_point = furthest_point_candidate
             furthest_point = np.asarray(furthest_point)
 
             S.append(furthest_point)
-            center, r_squared = mb.get_bounding_ball(np.array(S).reshape(-1, 1))
+            S_array = np.array(S)
+            if S_array.ndim == 1:
+                center, r_squared = mb.get_bounding_ball(S_array[:, np.newaxis])
+            else:
+                center, r_squared = mb.get_bounding_ball(S_array)
 
             raduis_diff = np.abs(np.sqrt(r_squared) - raduis)
             raduis = np.sqrt(r_squared)
