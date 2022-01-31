@@ -175,7 +175,7 @@ class DifferentaibleMeritFunc(AbstractLoss):
         diffs_squared = jnp.square(self.qoi_func(new_point) - center)
         return jnp.sum(diffs_squared)
 
-    def __call__(self, new_point, center, M_Alpha):
+    def __call__(self, new_point, center, M_alpha):
         """
         Evaluates the objective function at some new point.
 
@@ -196,7 +196,7 @@ class DifferentaibleMeritFunc(AbstractLoss):
 
         center_dist_term = self.center_dist(new_point, center)
         error = self.sum_sq_norms(params=new_point)
-        constraint = self.mu * jnp.max([error - M_Alpha, 0])
+        constraint = self.mu * jnp.max(jnp.array([error - M_alpha, 0]))
 
         return -center_dist_term + constraint
 
