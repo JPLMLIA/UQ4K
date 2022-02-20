@@ -14,10 +14,13 @@ import jax.numpy as jnp
 import miniball as mb
 import numpy as np
 import optax
+from jax.config import config
 from scipy import stats
 
 from uq4k.gradient.early_stopper import EarlyStopper
 from uq4k.models.loss import DifferentaibleMeritFunc
+
+config.update("jax_enable_x64", True)
 
 
 class GdOpt:
