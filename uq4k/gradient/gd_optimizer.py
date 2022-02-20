@@ -277,6 +277,7 @@ class GdOpt:
             - raduis: the raduis of the minimum enclosing ball
         """
         dims = theta_dims
+        qoi_dims = self.objective.qoi_func(np.zeros(shape=(dims,))).size
 
         initial_theta_val = None
         init_strategy = None
@@ -330,7 +331,7 @@ class GdOpt:
             raduis_diff = np.abs(np.sqrt(r_squared) - raduis)
             raduis = np.sqrt(r_squared)
 
-            if len(S) > dims + 1:
+            if len(S) > qoi_dims + 1:
                 distances = [np.linalg.norm(center - Si) for Si in S]
                 remove_indx = np.argmin(distances)
                 S.pop(remove_indx)

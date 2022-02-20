@@ -98,7 +98,7 @@ class BbOpt:
             radius_0  (float)  : converged radius of minimum enclosing ball
         """
         S = []
-        d = len(bounds)
+        d = self.objective_obj.qoi_func(theta_init).size
 
         # find the MLE
         mle_theta, mle_error = self.find_mle(data=data, starting_theta=theta_init)
