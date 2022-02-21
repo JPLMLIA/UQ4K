@@ -5,8 +5,11 @@
 # Last Modified : Sep 30, 2021
 
 from collections.abc import Iterable
+
 import numpy as np
+
 from uq4k.models.base_model import BaseModel, Modelparameter
+
 
 class QuadraticModel(BaseModel):
     """
@@ -22,6 +25,7 @@ class QuadraticModel(BaseModel):
         theta_bounds (np arr) : bounds on model parameters (d x 2)
         x            (np arr) : observed x locations
     """
+
     def __init__(self, weight, weight_bounds):
         self.weight = weight
         self.weight_bounds = weight_bounds

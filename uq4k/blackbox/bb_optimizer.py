@@ -34,9 +34,7 @@ class BbOpt:
         while (not coverged) & (i < max_iters):
 
             opt_mle = minimize(
-                fun=lambda theta: self.objective_obj.sum_sq_norms(
-                    params=theta),
-                x0=starting_theta
+                fun=lambda theta: self.objective_obj.sum_sq_norms(params=theta), x0=starting_theta
             )
 
             if opt_mle['success']:
@@ -46,10 +44,7 @@ class BbOpt:
 
         return opt_mle['x'], opt_mle['fun']
 
-    def compute_M_alpha(
-        self,
-        sigma_2, mle_error, df, conf_level=0.95, man_delta=None
-    ):
+    def compute_M_alpha(self, sigma_2, mle_error, df, conf_level=0.95, man_delta=None):
         """
         Finds the slack to define the ellipsoid from the likelihood ratio.
         Supports chi-sq method and manual delta set
@@ -103,21 +98,14 @@ class BbOpt:
             radius_0  (float)  : converged radius of minimum enclosing ball
         """
         S = []
-        d = len(bounds)
+        d = self.objective_obj.qoi_func(theta_init).size
 
         # find the MLE
-        mle_theta, mle_error = self.find_mle(
-            data=data,
-            starting_theta=theta_init
-        )
+        mle_theta, mle_error = self.find_mle(data=data, starting_theta=theta_init)
 
         # compute M_alpha
         M_alpha = self.compute_M_alpha(
-            sigma_2=sigma_2,
-            mle_error=mle_error,
-            df=len(mle_theta),
-            man_delta=man_delta,
-            conf_level=conf_lev
+            sigma_2=sigma_2, mle_error=mle_error, df=len(mle_theta), man_delta=man_delta, conf_level=conf_lev
         )
 
         # set variables for starting loop
@@ -130,18 +118,12 @@ class BbOpt:
         while (e >= epsilon_0) & (i < max_iter):
 
             # find boundary point
-            de_result = differential_evolution(
-                func=self.objective_obj,
-                args=(center, M_alpha),
-                bounds=bounds
-            )
+            de_result = differential_evolution(func=self.objective_obj, args=(center, M_alpha), bounds=bounds)
             assert de_result['success']
 
             # check if new point has larger radius
             if np.linalg.norm(de_result['x'] - center) >= radius_0:
-                S.append(
-                    self.objective_obj.qoi_func(de_result['x'])
-                )
+                S.append(self.objective_obj.qoi_func(de_result['x']))
 
             # find the minimum enclosing ball for S
             if len(np.array(S).shape) == 1:  # i.e., a 1d QoI
