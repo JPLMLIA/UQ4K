@@ -6,6 +6,8 @@ Development Lead
 ----------------
 
 * Mahdy Shirdel <mshirdel@utexas.edu>
+* Mike Stanely
+* Mostafa Samir
 
 Contributors
 ------------
