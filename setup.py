@@ -46,6 +46,6 @@ setup(
     test_suite='tests',
     extras_require={"dev": dev_requirments},
     url='https://github.com/uq4k/uq4k',
-    version='0.1.0-beta',
+    version='0.1.0-beta-1',
     zip_safe=False,
 )
