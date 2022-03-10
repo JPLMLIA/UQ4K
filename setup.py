@@ -45,7 +45,7 @@ setup(
     packages=find_packages(include=['uq4k', 'uq4k.*']),
     test_suite='tests',
     extras_require={"dev": dev_requirments},
-    url='https://github.com/uq4k/uq4k',
-    version='0.1.0-beta-1',
+    url='https://github.com/JPLMLIA/UQ4K',
+    version='0.1.0-beta-2',
     zip_safe=False,
 )
