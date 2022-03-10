@@ -18,9 +18,9 @@ $ pip install uq4k
 
 > To fully run the provided examples, you'll need to have `matplotlib` in your environment
 
-There are two versions of `uq4k` that can be used: gradient-based version and non-gradient version. For the gradient-based, consult the [gradient-based quadratic model example](examples/demo_quadratic_model_gradient.ipynb) for the usage. For the non-gradient version, check:
+There are two versions of `uq4k` that can be used: gradient-based version and non-gradient version. For the gradient-based, consult the [gradient-based quadratic model example](https://github.com/JPLMLIA/UQ4K/blob/master/examples/demo_quadratic_model_gradient.ipynb) for the usage. For the non-gradient version, check:
 
-- [Example on predator-prey model (Lotka-Volterra)](examples/demo_pred_prey_model.ipynb)
-- [Example on a quadratic model with no gradients.](examples/demo_quadratic_model_blackbox.ipynb)
+- [Example on predator-prey model (Lotka-Volterra)](https://github.com/JPLMLIA/UQ4K/blob/master/examples/demo_pred_prey_model.ipynb)
+- [Example on a quadratic model with no gradients.](https://github.com/JPLMLIA/UQ4K/blob/master/examples/demo_quadratic_model_blackbox.ipynb)
 
 _Detailed instruction on applying `uq4k` for your custom models will be provided soon_
