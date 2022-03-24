@@ -20,6 +20,6 @@ repos:
       - id: black
         name: "Black"
         language: system
-        pass_filenames: false
-        entry: black .
-        args: [--safe, --quiet, "--line-length=110", "--skip-string-normalization"]
+        types: [file, python]
+        entry: black
+        args: [--safe, "--line-length=110", "--skip-string-normalization"]
